@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Recommender</title>
+
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+    body {
+        background: radial-gradient(circle at top, #0f172a, #020617);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Hide scrollbar */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+
+</head>
+
+<body class="text-white">
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="flex justify-between items-center px-8 py-4 backdrop-blur-lg bg-white/5 border-b border-white/10 sticky top-0 z-50">
+    <h1 class="text-xl font-bold text-green-400"> Book Recommender</h1>
+
+
+<div class="space-x-6">
+    <a href="/" class="text-green-400 font-semibold">Home</a>
+    <a href="/recommend" class="hover:text-green-400 transition">Recommend</a>
+    <a href="#" class="hover:text-green-400 transition">Contact</a>
+</div>
+
+
+</nav>
+
+<!-- ================= HERO ================= -->
+
+<div class="px-10 py-12">
+    <h1 class="text-5xl font-extrabold bg-gradient-to-r from-green-400 to-blue-500 text-transparent bg-clip-text">
+        Discover Books Like Never Before
+    </h1>
+    <p class="text-gray-400 mt-3 text-lg">
+        AI-powered recommendations tailored just for you
+    </p>
+</div>
+
+<!-- ================= SECTION: POPULAR ================= -->
+
+<div class="px-10 mb-12">
+    <h2 class="text-2xl font-semibold mb-4"> Popular Books</h2>
+
+
+<div class="flex overflow-x-auto gap-6 scrollbar-hide">
+
+    {% for i in range(book_name|length) %}
+    <div class="min-w-[200px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3
+                hover:scale-110 hover:shadow-green-500/30 transition duration-300 cursor-pointer">
+
+        <img src="{{ image[i] }}"
+             class="rounded-lg h-60 w-full object-cover">
+
+        <h3 class="mt-3 text-sm font-semibold line-clamp-2">
+            {{ book_name[i] }}
+        </h3>
+
+        <p class="text-gray-400 text-xs mt-1">
+            {{ author[i] }}
+        </p>
+
+    </div>
+    {% endfor %}
+
+</div>
+```
+
+</div>
+
+<!-- ================= SECTION: TOP RATED ================= -->
+
+<div class="px-10 mb-12">
+    <h2 class="text-2xl font-semibold mb-4">Top Rated</h2>
+
+
+<div class="flex overflow-x-auto gap-6 scrollbar-hide">
+
+    {% for i in range(book_name|length) %}
+    <div class="min-w-[200px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3
+                hover:scale-110 hover:shadow-blue-500/30 transition duration-300 cursor-pointer">
+
+        <img src="{{ image[i] }}"
+             class="rounded-lg h-60 w-full object-cover">
+
+        <h3 class="mt-3 text-sm font-semibold">
+            {{ book_name[i] }}
+        </h3>
+
+        <p class="text-yellow-400 text-xs mt-1">
+            ⭐ {{ "%.1f"|format(rating[i]) }}
+        </p>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+</div>
+
+<!-- ================= SECTION: MOST VOTED ================= -->
+
+<div class="px-10 mb-16">
+    <h2 class="text-2xl font-semibold mb-4"> Most Voted</h2>
+
+<div class="flex overflow-x-auto gap-6 scrollbar-hide">
+
+    {% for i in range(book_name|length) %}
+    <div class="min-w-[200px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3
+                hover:scale-110 hover:shadow-purple-500/30 transition duration-300 cursor-pointer">
+
+        <img src="{{ image[i] }}"
+             class="rounded-lg h-60 w-full object-cover">
+
+        <h3 class="mt-3 text-sm font-semibold">
+            {{ book_name[i] }}
+        </h3>
+
+        <p class="text-gray-400 text-xs mt-1">
+             {{ votes[i] }} votes
+        </p>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+
+</div>
+
+<!-- ================= FOOTER ================= -->
+
+<div class="text-center py-6 border-t border-white/10 text-gray-500">
+
+</div>
+
+</body>
+</html>

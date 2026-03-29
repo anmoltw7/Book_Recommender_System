@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Book Recommender</title>
+
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+    body {
+        background: radial-gradient(circle at top, #0f172a, #020617);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Hide scrollbar */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+
+</head>
+
+<body class="text-white">
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="flex justify-between items-center px-8 py-4 backdrop-blur-lg bg-white/5 border-b border-white/10 sticky top-0 z-50">
+    <h1 class="text-xl font-bold text-green-400">Book Recommender</h1>
+
+
+<div class="space-x-6">
+    <a href="/" class="hover:text-green-400 transition">Home</a>
+    <a href="/recommend" class="text-green-400 font-semibold">Recommend</a>
+    <a href="#" class="hover:text-green-400 transition">Contact</a>
+</div>
+
+
+</nav>
+
+<!-- ================= HERO ================= -->
+
+<div class="px-10 py-12 text-center">
+    <h1 class="text-5xl font-extrabold bg-gradient-to-r from-green-400 to-blue-500 text-transparent bg-clip-text">
+        Find Your Next Favorite Book
+    </h1>
+    <p class="text-gray-400 mt-3 text-lg">
+        Smart  recommendations based on your input
+    </p>
+</div>
+
+<!-- ================= SEARCH WITH AUTOCOMPLETE ================= -->
+
+<div class="flex justify-center relative">
+    <form action="/recommend_books" method="post" class="w-1/2 flex gap-3">
+
+
+    <div class="w-full relative">
+        <input
+            id="searchBox"
+            name="user_input"
+            type="text"
+            autocomplete="off"
+            placeholder="Search books..."
+            class="w-full p-4 rounded-xl bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-green-400"
+        >
+
+        <!-- Suggestions Dropdown -->
+        <div id="suggestions"
+             class="absolute w-full bg-black/90 backdrop-blur-lg border border-white/10 rounded-xl mt-2 hidden z-50 max-h-60 overflow-y-auto">
+        </div>
+    </div>
+
+    <button
+        type="submit"
+        class="px-6 py-4 rounded-xl bg-gradient-to-r from-green-400 to-blue-500 text-black font-bold hover:scale-105 transition"
+    >
+        Recommend
+    </button>
+</form>
+
+
+</div>
+
+<!-- ================= RESULTS SECTION ================= -->
+
+{% if data %}
+
+<div class="px-10 mt-16">
+    <h2 class="text-2xl font-semibold mb-6">📖 Recommended Books</h2>
+
+
+<div class="flex overflow-x-auto gap-6 scrollbar-hide">
+
+    {% for i in data %}
+    <div class="min-w-[200px] bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-3
+                hover:scale-110 hover:shadow-green-500/30 transition duration-300 cursor-pointer">
+
+        <img src="{{i[2]}}"
+             class="rounded-lg h-60 w-full object-cover">
+
+        <h3 class="mt-3 text-sm font-semibold">
+            {{i[0]}}
+        </h3>
+
+        <p class="text-gray-400 text-xs mt-1">
+            {{i[1]}}
+        </p>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+
+</div>
+
+{% endif %}
+
+<!-- ================= AUTOCOMPLETE SCRIPT ================= -->
+
+<script>
+const searchBox = document.getElementById("searchBox");
+const suggestionsBox = document.getElementById("suggestions");
+
+searchBox.addEventListener("keyup", async () => {
+    let query = searchBox.value;
+
+    if (query.length < 2) {
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.classList.add("hidden");
+        return;
+    }
+
+    const res = await fetch(`/autocomplete?q=${query}`);
+    const data = await res.json();
+
+    suggestionsBox.innerHTML = "";
+
+    data.forEach(item => {
+        let div = document.createElement("div");
+        div.innerText = item;
+
+        div.classList.add(
+            "p-3",
+            "cursor-pointer",
+            "hover:bg-green-500/20",
+            "border-b",
+            "border-white/10"
+        );
+
+        div.onclick = () => {
+            searchBox.value = item;
+            suggestionsBox.innerHTML = "";
+            suggestionsBox.classList.add("hidden");
+        };
+
+        suggestionsBox.appendChild(div);
+    });
+
+    suggestionsBox.classList.remove("hidden");
+});
+</script>
+
+</body>
+</html>
