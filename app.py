@@ -1,7 +1,30 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import pickle
 import numpy as np
-from flask import jsonify
+import os
+import gdown
+
+# ================= DOWNLOAD PKL FILES =================
+
+files = {
+    "popular.pkl":"1DsKw7vyMXs7Y4G0BSTynDM6CmmvvACAT",
+    "pt.pkl": "1qZCNwCih9GeLKpicGdO535nB71sxS3UD",
+    "books.pkl": "1U3clgcqNZu7sp2c0tJjeb2s34lfEGY7y",
+    "similarity_scores.pkl": "1Zkppl8DewO3OtMfOAVxDKcvVEytaYbUK"
+}
+
+def download_file(filename, file_id):
+    if not os.path.exists(filename):
+        print(f"Downloading {filename}...")
+        url = f"https://drive.google.com/uc?id={file_id}"
+        gdown.download(url, filename, quiet=False)
+
+# Download all files at startup
+for filename, file_id in files.items():
+    download_file(filename, file_id)
+
+print("All model files ready ✅")
+
 # ================= LOAD DATA =================
 
 popular_df = pickle.load(open('popular.pkl', 'rb'))
@@ -10,7 +33,6 @@ books = pickle.load(open('books.pkl', 'rb'))
 similarity_scores = pickle.load(open('similarity_scores.pkl', 'rb'))
 
 app = Flask(__name__)
-
 
 # ================= HOME =================
 
@@ -25,12 +47,12 @@ def index():
         rating=list(popular_df['avg_rating'].values)
     )
 
-
 # ================= RECOMMEND PAGE =================
 
 @app.route('/recommend')
 def recommend_ui():
     return render_template('recommend.html')
+
 @app.route('/autocomplete')
 def autocomplete():
     query = request.args.get('q', '').lower()
@@ -46,15 +68,14 @@ def autocomplete():
     return jsonify(suggestions[:8])
 
 # ================= RECOMMENDATION =================
+
 @app.route('/recommend_books', methods=['POST'])
 def recommend():
     user_input = request.form.get('user_input')
 
-    # Handle empty input
     if not user_input:
         return render_template('recommend.html', data=[])
 
-    # Handle book not found
     if user_input not in pt.index:
         return render_template('recommend.html', data=[], error="Book not found!")
 
@@ -85,4 +106,5 @@ def recommend():
 # ================= RUN =================
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # 🔥 important for deployment
+    app.run(host="0.0.0.0", port=port)
