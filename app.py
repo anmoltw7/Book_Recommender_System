@@ -79,7 +79,7 @@ def recommend():
     if user_input not in pt.index:
         return render_template('recommend.html', data=[], error="Book not found!")
 
-    index = np.where(pt.index == user_input)[0][0]
+    index = pt.index.get_loc(user_input)
 
     similar_items = sorted(
         list(enumerate(similarity_scores[index])),
