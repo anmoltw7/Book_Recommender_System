@@ -7,17 +7,20 @@ import gdown
 # ================= DOWNLOAD PKL FILES =================
 
 files = {
-    "popular.pkl":"1DsKw7vyMXs7Y4G0BSTynDM6CmmvvACAT",
+    "popular.pkl": "1DsKw7vyMXs7Y4G0BSTynDM6CmmvvACAT",
     "pt.pkl": "1qZCNwCih9GeLKpicGdO535nB71sxS3UD",
     "books.pkl": "1U3clgcqNZu7sp2c0tJjeb2s34lfEGY7y",
     "similarity_scores.pkl": "1Zkppl8DewO3OtMfOAVxDKcvVEytaYbUK"
 }
 
 def download_file(filename, file_id):
-    if not os.path.exists(filename):
-        print(f"Downloading {filename}...")
-        url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, filename, quiet=False)
+    try:
+        if not os.path.exists(filename):
+            print(f"Downloading {filename}...")
+            url = f"https://drive.google.com/uc?id={file_id}"
+            gdown.download(url, filename, quiet=False)
+    except Exception as e:
+        print(f"Error downloading {filename}: {e}")
 
 for filename, file_id in files.items():
     download_file(filename, file_id)
@@ -26,13 +29,23 @@ print("All model files ready ✅")
 
 # ================= LOAD DATA =================
 
-popular_df = pickle.load(open('popular.pkl', 'rb'))
-pt = pickle.load(open('pt.pkl', 'rb'))
-books = pickle.load(open('books.pkl', 'rb'))
-similarity_scores = pickle.load(open('similarity_scores.pkl', 'rb'))
+try:
+    popular_df = pickle.load(open('popular.pkl', 'rb'))
+    pt = pickle.load(open('pt.pkl', 'rb'))
+    books = pickle.load(open('books.pkl', 'rb'))
+    similarity_scores = pickle.load(open('similarity_scores.pkl', 'rb'))
+except Exception as e:
+    print("Error loading pickle files:", e)
 
-# 🔥 FIX 1: Convert index to string
-pt.index = pt.index.astype(str)
+# ================= CLEAN DATA =================
+
+pt = pt.copy()
+pt.index = pt.index.astype(str).str.strip()
+pt = pt[~pt.index.isna()]
+
+books['Book-Title'] = books['Book-Title'].astype(str).str.strip()
+
+# ================= INIT APP =================
 
 app = Flask(__name__)
 
@@ -55,61 +68,83 @@ def index():
 def recommend_ui():
     return render_template('recommend.html')
 
+# ================= AUTOCOMPLETE =================
+
 @app.route('/autocomplete')
 def autocomplete():
-    query = request.args.get('q', '').lower()
+    try:
+        query = request.args.get('q', '').lower().strip()
 
-    if not query:
+        if not query:
+            return jsonify([])
+
+        suggestions = [
+            str(book)
+            for book in pt.index.tolist()
+            if query in str(book).lower()
+        ]
+
+        return jsonify(suggestions[:8])
+    except Exception as e:
+        print("Autocomplete error:", e)
         return jsonify([])
-
-    suggestions = [
-        str(book) for book in pt.index   # FIX 2
-        if query in str(book).lower()    # FIX 3
-    ]
-
-    return jsonify(suggestions[:8])
 
 # ================= RECOMMENDATION =================
 
 @app.route('/recommend_books', methods=['POST'])
 def recommend():
+    try:
+        user_input = request.form.get('user_input', '')
+        user_input = str(user_input).strip()
 
-    # 🔥 FIX 4: Clean input
-    user_input = request.form.get('user_input', '').strip()
+        if not user_input:
+            return render_template('recommend.html', data=[])
 
-    if not user_input:
-        return render_template('recommend.html', data=[])
+        if user_input not in pt.index.tolist():
+            return render_template('recommend.html', data=[], error="Book not found!")
 
-    # 🔥 FIX 5: Normalize comparison
-    user_input = str(user_input)
+        try:
+            index = pt.index.tolist().index(user_input)
+        except ValueError:
+            return render_template('recommend.html', data=[], error="Book not found!")
 
-    if user_input not in pt.index:
-        return render_template('recommend.html', data=[], error="Book not found!")
+        # safe similarity access
+        if index >= len(similarity_scores):
+            return render_template('recommend.html', data=[], error="Data error")
 
-    # 🔥 FIX 6: Safe indexing
-    index = pt.index.get_loc(user_input)
+        similar_items = sorted(
+            list(enumerate(similarity_scores[index])),
+            key=lambda x: x[1],
+            reverse=True
+        )[1:5]
 
-    similar_items = sorted(
-        list(enumerate(similarity_scores[index])),
-        key=lambda x: x[1],
-        reverse=True
-    )[1:5]
+        data = []
 
-    data = []
+        for i in similar_items:
+            try:
+                temp_df = books[books['Book-Title'] == pt.index[i[0]]]
+                temp_df = temp_df.drop_duplicates('Book-Title')
 
-    for i in similar_items:
-        temp_df = books[books['Book-Title'] == pt.index[i[0]]]
-        temp_df = temp_df.drop_duplicates('Book-Title')
+                if temp_df.empty:
+                    continue
 
-        item = [
-            temp_df['Book-Title'].values[0],
-            temp_df['Book-Author'].values[0],
-            temp_df['Image-URL-M'].values[0]
-        ]
+                item = [
+                    temp_df['Book-Title'].values[0],
+                    temp_df['Book-Author'].values[0],
+                    temp_df['Image-URL-M'].values[0]
+                ]
 
-        data.append(item)
+                data.append(item)
 
-    return render_template('recommend.html', data=data)
+            except Exception as e:
+                print("Error in recommendation loop:", e)
+                continue
+
+        return render_template('recommend.html', data=data)
+
+    except Exception as e:
+        print("Recommendation error:", e)
+        return render_template('recommend.html', data=[], error="Something went wrong")
 
 # ================= RUN =================
 
