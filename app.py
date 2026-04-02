@@ -19,7 +19,6 @@ def download_file(filename, file_id):
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, filename, quiet=False)
 
-# Download all files at startup
 for filename, file_id in files.items():
     download_file(filename, file_id)
 
@@ -31,6 +30,9 @@ popular_df = pickle.load(open('popular.pkl', 'rb'))
 pt = pickle.load(open('pt.pkl', 'rb'))
 books = pickle.load(open('books.pkl', 'rb'))
 similarity_scores = pickle.load(open('similarity_scores.pkl', 'rb'))
+
+# 🔥 FIX 1: Convert index to string
+pt.index = pt.index.astype(str)
 
 app = Flask(__name__)
 
@@ -61,8 +63,8 @@ def autocomplete():
         return jsonify([])
 
     suggestions = [
-        book for book in pt.index
-        if query in book.lower()
+        str(book) for book in pt.index   # FIX 2
+        if query in str(book).lower()    # FIX 3
     ]
 
     return jsonify(suggestions[:8])
@@ -71,14 +73,20 @@ def autocomplete():
 
 @app.route('/recommend_books', methods=['POST'])
 def recommend():
-    user_input = request.form.get('user_input')
+
+    # 🔥 FIX 4: Clean input
+    user_input = request.form.get('user_input', '').strip()
 
     if not user_input:
         return render_template('recommend.html', data=[])
 
+    # 🔥 FIX 5: Normalize comparison
+    user_input = str(user_input)
+
     if user_input not in pt.index:
         return render_template('recommend.html', data=[], error="Book not found!")
 
+    # 🔥 FIX 6: Safe indexing
     index = pt.index.get_loc(user_input)
 
     similar_items = sorted(
@@ -106,5 +114,5 @@ def recommend():
 # ================= RUN =================
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # 🔥 important for deployment
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
