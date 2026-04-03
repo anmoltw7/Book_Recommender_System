@@ -1,6 +1,6 @@
 flask
-numpy
-pandas
+pandas==1.5.3
+numpy==1.23.5
 scikit-learn
 gdown
 gunicorn==21.2.0
